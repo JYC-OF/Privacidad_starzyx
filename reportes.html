@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Centro de solicitudes y reportes · STARZYX</title>
+<style>
+/* ===== Tokens ===== */
+:root{--ink:#0a0b11;--panel:#13141d;--panel2:#1a1c28;--line:#2a2d40;--tx:#ecebf4;--mu:#9093ad;--gold:#ffcf6b;--bad:#ff7a8a;--r:16px}
+*{box-sizing:border-box}
+html{color-scheme:dark;-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;color:var(--tx);background:var(--ink) radial-gradient(900px 420px at 50% -120px,#23244a,transparent);font:16px/1.5 "Avenir Next","Segoe UI Variable","Segoe UI",system-ui,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) 18px 48px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.14em;font-size:.9rem;color:var(--gold)}
+h1{font:600 clamp(1.8rem,6vw,2.5rem)/1.12 "Iowan Old Style","Palatino Linotype",Georgia,serif;margin:18px 0 6px}
+.lead{color:var(--mu);margin:0 0 22px}
+/* ===== Pestañas con barra deslizante ===== */
+.tabs{position:relative;display:grid;grid-template-columns:1fr 1fr;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px}
+.tabs button{position:relative;z-index:1;background:none;border:0;color:var(--mu);font:inherit;font-weight:600;padding:11px 8px;border-radius:999px;cursor:pointer;transition:color .25s}
+.tabs button[aria-selected=true]{color:#1a1405}
+.bar{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);background:var(--gold);border-radius:999px}
+.bar.anim{transition:transform .38s cubic-bezier(.3,.8,.3,1)}
+/* ===== Carrusel horizontal ===== */
+.viewport{overflow:hidden;margin-top:18px;touch-action:pan-y;transition:height .3s ease}
+.track{display:flex;width:200%;align-items:flex-start;will-change:transform}
+.track.anim{transition:transform .38s cubic-bezier(.3,.8,.3,1)}
+.panel{width:50%;padding:2px 2px 6px}
+h2{margin:6px 0 2px;font-size:1.35rem}
+.sub{color:var(--mu);margin:0 0 16px}
+/* ===== Opciones ===== */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.opt{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);color:var(--tx);font:inherit;font-weight:600;padding:14px;cursor:pointer;transition:border-color .2s,background .2s,transform .1s}
+.opt:hover{background:var(--panel2)}.opt:active{transform:scale(.98)}
+.opt[aria-checked=true]{border-color:var(--gold);background:var(--panel2);box-shadow:inset 3px 0 0 var(--gold)}
+.opt small{display:block;font-weight:400;color:var(--mu);margin-top:2px}
+/* ===== Mostrar/ocultar con animación ===== */
+.rv{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s ease}
+.rv.open{grid-template-rows:1fr}
+.rv>div{min-height:0;overflow:hidden}
+.rv:not(.open)>div{visibility:hidden;transition:visibility 0s .35s}
+/* ===== Formularios ===== */
+form{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:12px}
+.f{margin-bottom:14px}
+label,.q{display:block;font-weight:600;font-size:.95rem;margin-bottom:6px}
+.req{color:var(--gold)}
+input[type=text],input[type=email],input[type=url],textarea{width:100%;background:#0d0e15;color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;transition:border-color .2s,box-shadow .2s}
+textarea{resize:vertical;min-height:110px}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-color:var(--gold)}
+[aria-invalid=true]{border-color:var(--bad)!important}
+.err{color:var(--bad);font-size:.85rem;margin:5px 0 0;min-height:0}.err:empty{display:none}
+.choices{display:flex;gap:10px;flex-wrap:wrap}
+.choice{display:flex;align-items:center;gap:8px;background:#0d0e15;border:1px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:500;margin:0}
+.choice:has(input:checked){border-color:var(--gold)}
+.choice input{accent-color:var(--gold);width:18px;height:18px;margin:0}
+.vrow{display:flex;gap:8px;margin-bottom:6px}.vrow input{flex:1}
+.vrow+.err{margin:-2px 0 8px}
+.x{width:46px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--tx);font-size:1.3rem;cursor:pointer}
+.x:disabled{opacity:.35;cursor:not-allowed}
+.sect{border-left:2px solid var(--line);padding-left:14px;margin:4px 0 14px}
+/* ===== Botones ===== */
+.btn{font:inherit;font-weight:700;border-radius:12px;padding:12px 18px;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--tx);transition:filter .2s,transform .1s,background .2s}
+.btn:hover{filter:brightness(1.15)}.btn:active{transform:translateY(1px) scale(.98)}
+.btn.main{background:var(--gold);color:#1a1405;border-color:var(--gold)}
+.btn.ghost{background:none}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.actions .main{flex:1;min-width:200px}
+.notice{margin-top:14px;padding:12px 14px;border-radius:12px;background:#1d2a22;border:1px solid #2f5a42;font-size:.93rem}
+.notice[hidden]{display:none}.notice p{margin:0 0 8px}
+.switch{margin-top:6px}
+dialog{background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:var(--r);max-width:min(560px,92vw);padding:20px}
+dialog::backdrop{background:rgba(5,6,10,.7)}
+pre{white-space:pre-wrap;word-break:break-word;background:#0d0e15;border-radius:12px;padding:12px;max-height:40vh;overflow:auto;font:.85rem/1.5 ui-monospace,Menlo,Consolas,monospace}
+@media (max-width:480px){.opts{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1l2.9 7.1L22 9.3l-5.5 5 1.7 7.7L12 18l-6.2 4 1.7-7.7L2 9.3l7.1-1.2z"/></svg>STARZYX</div>
+  <h1>Centro de solicitudes y reportes</h1>
+  <p class="lead">Selecciona el tipo de solicitud que deseas realizar.</p>
+
+  <div class="tabs" role="tablist">
+    <div class="bar anim" id="bar"></div>
+    <button role="tab" id="tab0" aria-selected="true" aria-controls="p0">Eliminación de contenido</button>
+    <button role="tab" id="tab1" aria-selected="false" aria-controls="p1">Reportar usuarios o videos</button>
+  </div>
+
+  <div class="viewport" id="vp"><div class="track anim" id="track">
+    <section class="panel" id="p0" role="tabpanel" aria-labelledby="tab0">
+      <h2>Solicitudes de eliminación</h2>
+      <p class="sub">Solicita la eliminación de tu perfil o de contenido publicado.</p>
+      <div class="opts" role="radiogroup" aria-label="Tipo de eliminación">
+        <button type="button" class="opt" role="radio" aria-checked="false" data-form="delProfile">Eliminación de perfil<small>Tu cuenta y, si quieres, tus videos</small></button>
+        <button type="button" class="opt" role="radio" aria-checked="false" data-form="delVideo">Eliminación de videos<small>Solo uno o varios videos</small></button>
+      </div>
+      <div id="slot-delProfile"></div><div id="slot-delVideo"></div>
+      <button type="button" class="btn ghost switch" data-go="1">Ir a reportes ›</button>
+    </section>
+    <section class="panel" id="p1" role="tabpanel" aria-labelledby="tab1">
+      <h2>Reportar usuarios o videos</h2>
+      <p class="sub">Si detectaste contenido que infringe las normas, puedes enviar un reporte.</p>
+      <div class="opts" role="radiogroup" aria-label="Tipo de reporte">
+        <button type="button" class="opt" role="radio" aria-checked="false" data-form="repUser">Reportar usuario<small>Una cuenta que infringe las normas</small></button>
+        <button type="button" class="opt" role="radio" aria-checked="false" data-form="repVideo">Reportar video<small>Un video con contenido indebido</small></button>
+      </div>
+      <div id="slot-repUser"></div><div id="slot-repVideo"></div>
+      <button type="button" class="btn ghost switch" data-go="0">‹ Volver a eliminación de contenido</button>
+    </section>
+  </div></div>
+</div>
+
+<dialog id="dlg">
+  <h2 style="margin-top:0">Revisa antes de abrir el correo</h2>
+  <p class="sub">Se abrirá tu aplicación de correo con este mensaje para jycof2@gmail.com. Todavía no se ha enviado nada.</p>
+  <pre id="preview"></pre>
+  <div class="actions"><button class="btn ghost" id="dNo" type="button">Cancelar</button><button class="btn main" id="dOk" type="button">Abrir mi correo</button></div>
+</dialog>
+
+<script>
+(()=>{
+"use strict";
+const TO="jycof2@gmail.com";
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+
+/* ===== 1. Definición de formularios ===== */
+// Tipos: email, text, area, url, vids (lista de enlaces)
+const SCHEMAS={
+  delProfile:{subject:"Solicitud de eliminación de perfil",extra:true,fields:[
+    ["email","Correo electrónico","email"],["user","Nombre de usuario","text"],["reason","Motivo de la eliminación","area"]]},
+  delVideo:{subject:"Solicitud de eliminación de videos",fields:[
+    ["email","Correo electrónico","email"],["vids","Enlace del video","vids"],["reason","Motivo de la eliminación","area"]]},
+  repUser:{subject:"Reporte de usuario",fields:[
+    ["email","Correo electrónico","email"],["user","Nombre de usuario que deseas reportar","text"],["reason","Motivo del reporte (explica la infracción con detalle)","area"]]},
+  repVideo:{subject:"Reporte de video",fields:[
+    ["email","Correo electrónico","email"],["video","Enlace del video","url"],["reason","Motivo del reporte (explica la infracción con detalle)","area"]]}
+};
+
+/* ===== 2. Construcción del HTML de cada formulario ===== */
+const fieldHTML=(k,l,t,key)=>{
+  const id=`${key}-${k}`,L=`<label for="${id}">${l} <span class="req" aria-hidden="true">*</span></label>`;
+  if(t=="vids")return `<div class="f" data-f="vids"><span class="q">${l} <span class="req">*</span></span>${vidsHTML()}</div>`;
+  const inp=t=="area"?`<textarea id="${id}" name="${k}" required></textarea>`
+    :`<input id="${id}" name="${k}" type="${t=="text"?"text":t}" ${t=="email"?'autocomplete="email" inputmode="email"':""}${t=="url"?'inputmode="url" placeholder="https://"':""} required>`;
+  return `<div class="f" data-f="${k}">${L}${inp}<p class="err" role="alert"></p></div>`;
+};
+const vidsHTML=()=>`<div class="vlist"></div><button type="button" class="btn ghost add">+ Agregar otro video</button>`;
+const extraHTML=key=>`
+  <div class="f" data-f="more"><span class="q">¿Deseas eliminar otro contenido? <span class="req">*</span></span>
+    <div class="choices"><label class="choice"><input type="radio" name="more" value="Sí"> Sí</label><label class="choice"><input type="radio" name="more" value="No"> No</label></div><p class="err" role="alert"></p></div>
+  <div class="rv" data-rv="more"><div><div class="sect">
+    <div class="f" data-f="what"><span class="q">¿Qué contenido deseas eliminar? <span class="req">*</span></span>
+      <label class="choice" style="display:inline-flex"><input type="checkbox" name="what" value="Eliminación de videos"> Eliminación de videos</label><p class="err" role="alert"></p></div>
+    <div class="rv" data-rv="what"><div><div class="f" data-f="vids"><span class="q">Enlace del video <span class="req">*</span></span>${vidsHTML()}</div></div></div>
+  </div></div></div>`;
+function build(key){
+  const sc=SCHEMAS[key];
+  $("#slot-"+key).innerHTML=`<div class="rv" data-form="${key}"><div><form novalidate data-key="${key}">
+    ${sc.fields.map(([k,l,t])=>fieldHTML(k,l,t,key)).join("")}${sc.extra?extraHTML(key):""}
+    <div class="actions"><button class="btn main" type="submit">Revisar y abrir correo</button><button class="btn ghost" type="reset">Limpiar formulario</button></div>
+    <div class="notice" hidden><p>Se ha abierto tu aplicación de correo con los datos de la solicitud. Revisa el mensaje y pulsa Enviar para completar el envío.</p>
+    <p>Si no se abrió ninguna aplicación de correo, copia el texto y envíalo a ${TO}.</p><button type="button" class="btn ghost copy">Copiar texto del correo</button></div>
+  </form></div></div>`;
+}
+Object.keys(SCHEMAS).forEach(build);
+
+/* ===== 3. Utilidades de interfaz ===== */
+const setOpen=(rv,o)=>{rv.classList.toggle("open",o);rv.inert=!o};
+$$(".rv").forEach(r=>setOpen(r,false));
+const showErr=(box,msg,input)=>{const e=$(".err",box);if(e)e.textContent=msg||"";(input?[input]:$$("input,textarea",box)).forEach(i=>msg?i.setAttribute("aria-invalid","true"):i.removeAttribute("aria-invalid"))};
+function addRow(list){
+  const row=document.createElement("div");
+  row.innerHTML=`<div class="vrow"><input type="url" inputmode="url" placeholder="https://" required><button type="button" class="x" aria-label="Quitar este video">×</button></div><p class="err" role="alert"></p>`;
+  list.append(...row.children);renumber(list);
+}
+function renumber(list){
+  const rows=$$(".vrow",list);
+  rows.forEach((r,i)=>{$("input",r).setAttribute("aria-label","Enlace del video "+(i+1));$(".x",r).disabled=rows.length<2});
+}
+$$(".vlist").forEach(l=>addRow(l));
+document.addEventListener("click",e=>{
+  const add=e.target.closest(".add");
+  if(add){addRow($(".vlist",add.parentElement));$$("input",add.parentElement).pop().focus()}
+  const x=e.target.closest(".x");
+  if(x&&!x.disabled){const row=x.closest(".vrow"),list=row.parentElement;row.nextElementSibling.remove();row.remove();renumber(list)}
+});
+// Preguntas condicionales del formulario de eliminación de perfil
+function syncExtra(f){
+  const yes=($("input[name=more]:checked",f)||{}).value=="Sí";
+  setOpen($('[data-rv="more"]',f),yes);
+  setOpen($('[data-rv="what"]',f),yes&&$("input[name=what]",f).checked);
+}
+$$("form").forEach(f=>{if(f.dataset.key=="delProfile")f.addEventListener("change",()=>syncExtra(f))});
+
+/* ===== 4. Selección de opción dentro de cada sección ===== */
+$$(".opt").forEach(b=>b.addEventListener("click",()=>{
+  const panel=b.closest(".panel");
+  $$(".opt",panel).forEach(o=>o.setAttribute("aria-checked",o==b));
+  $$("[data-form]",panel).forEach(rv=>{if(!rv.classList.contains("opt"))setOpen(rv,rv.dataset.form==b.dataset.form)});
+}));
+
+/* ===== 5. Validación ===== */
+const EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function validUrl(v){try{const u=new URL(v);return /^https?:$/.test(u.protocol)&&u.hostname.includes(".")&&!/\s/.test(v)}catch{return false}}
+function collect(f){
+  const key=f.dataset.key,sc=SCHEMAS[key],data=[];let first=null;
+  const bad=(box,msg,input)=>{showErr(box,msg,input);first=first||input||$("input,textarea",box)};
+  const vids=(scope,label)=>{
+    const urls=[];$$(".vrow",scope).forEach(r=>{
+      const inp=$("input",r),v=inp.value.trim(),box=r.parentElement,err=r.nextElementSibling;
+      err.textContent="";inp.removeAttribute("aria-invalid");
+      if(!v){err.textContent="Escribe el enlace del video.";inp.setAttribute("aria-invalid","true");first=first||inp}
+      else if(!validUrl(v)){err.textContent="Enlace no válido. Debe empezar por http:// o https://";inp.setAttribute("aria-invalid","true");first=first||inp}
+      else urls.push(v)});
+    if(urls.length)data.push([label,urls.map((u,i)=>`${i+1}. ${u}`).join("\n"),true]);
+  };
+  sc.fields.forEach(([k,l,t])=>{
+    const box=$(`[data-f="${k}"]`,f);
+    if(t=="vids"){vids(box,"Enlaces de videos");return}
+    const inp=$("input,textarea",box),v=inp.value.trim();showErr(box,"");
+    const name=l.replace(/ \(.*\)/,"");
+    if(!v)bad(box,"Este campo es obligatorio.",inp);
+    else if(t=="email"&&!EMAIL.test(v))bad(box,"Escribe un correo válido, por ejemplo nombre@dominio.com.",inp);
+    else if(t=="url"&&!validUrl(v))bad(box,"Enlace no válido. Debe empezar por http:// o https://",inp);
+    else data.push([name,v,t=="area"]);
+  });
+  if(sc.extra){
+    const mb=$('[data-f="more"]',f),sel=$("input[name=more]:checked",f);showErr(mb,"");
+    if(!sel)bad(mb,"Elige Sí o No.",$("input[name=more]",f));
+    else{
+      data.push(["¿Deseas eliminar otro contenido?",sel.value]);
+      if(sel.value=="Sí"){
+        const wb=$('[data-f="what"]',f),w=$("input[name=what]",f);showErr(wb,"");
+        if(!w.checked)bad(wb,"Selecciona el contenido que deseas eliminar.",w);
+        else{data.push(["Contenido adicional",w.value]);vids($('[data-rv="what"]',f),"Enlaces de videos")}
+      }
+    }
+  }
+  return {ok:!first,data,first,key};
+}
+// Orden del correo: tal como aparecen los campos
+function buildMail(key,data){
+  const sc=SCHEMAS[key];
+  const lines=["SOLICITUD: "+sc.subject,"Plataforma: STARZYX","Fecha: "+new Date().toLocaleString("es"),""];
+  data.forEach(([l,v,block])=>{lines.push(block?`${l}:\n${v}`:`${l}: ${v}`);lines.push("")});
+  const body=lines.join("\n").trim(),href=`mailto:${TO}?subject=${encodeURIComponent(sc.subject+" - STARZYX")}&body=${encodeURIComponent(body.replace(/\n/g,"\r\n"))}`;
+  return {subject:sc.subject+" - STARZYX",body,href};
+}
+
+/* ===== 6. Envío (mailto) con confirmación previa ===== */
+const dlg=$("#dlg");let pending=null;
+$$("form").forEach(f=>{
+  f.addEventListener("submit",e=>{
+    e.preventDefault();
+    const r=collect(f);
+    if(!r.ok){r.first.focus();return}
+    pending={mail:buildMail(r.key,r.data),form:f};
+    $("#preview").textContent="Asunto: "+pending.mail.subject+"\n\n"+pending.mail.body;
+    typeof dlg.showModal=="function"?dlg.showModal():go();
+  });
+  f.addEventListener("reset",()=>setTimeout(()=>{
+    $$("[aria-invalid]",f).forEach(i=>i.removeAttribute("aria-invalid"));$$(".err",f).forEach(p=>p.textContent="");
+    $$(".vlist",f).forEach(l=>{l.innerHTML="";addRow(l)});$(".notice",f).hidden=true;
+    if(f.dataset.key=="delProfile")syncExtra(f);fit();
+  }));
+  $(".copy",f).addEventListener("click",ev=>{
+    const b=ev.currentTarget,t=pending?"Asunto: "+pending.mail.subject+"\n\n"+pending.mail.body:"";
+    (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>b.textContent="Texto copiado").catch(()=>b.textContent="No se pudo copiar: selecciónalo en la vista previa");
+  });
+});
+function go(){
+  if(!pending)return;
+  const {mail,form}=pending;
+  $(".notice",form).hidden=false;fit();
+  window.location.href=mail.href; // abre la aplicación de correo; no se puede confirmar el envío real
+}
+$("#dOk").onclick=()=>{dlg.close();go()};$("#dNo").onclick=()=>dlg.close();
+
+/* ===== 7. Navegación deslizable (pestañas + gestos) ===== */
+const vp=$("#vp"),track=$("#track"),bar=$("#bar"),panels=$$(".panel"),tabs=$$(".tabs button");
+let idx=0,drag=null;
+const setPos=p=>{track.style.transform=`translate3d(${-p*50}%,0,0)`;bar.style.transform=`translateX(${p*100}%)`};
+function fit(){vp.style.height=panels[idx].offsetHeight+"px"}
+function goTo(i,anim=true){
+  idx=i;track.classList.toggle("anim",anim);bar.classList.toggle("anim",anim);setPos(i);
+  panels.forEach((p,j)=>p.inert=j!==i);tabs.forEach((t,j)=>t.setAttribute("aria-selected",j==i));fit();
+}
+tabs.forEach((t,i)=>t.addEventListener("click",()=>goTo(i)));
+$$("[data-go]").forEach(b=>b.addEventListener("click",()=>{goTo(+b.dataset.go);scrollTo({top:0,behavior:"smooth"})}));
+// touch-action:pan-y deja el scroll vertical al navegador; solo se captura el gesto horizontal
+vp.addEventListener("pointerdown",e=>{if(e.target.closest("input,textarea"))return;drag={x:e.clientX,y:e.clientY,t:performance.now(),id:e.pointerId,lock:null}});
+vp.addEventListener("pointermove",e=>{
+  if(!drag||e.pointerId!==drag.id)return;
+  const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+  if(!drag.lock&&(Math.abs(dx)>8||Math.abs(dy)>8)){
+    drag.lock=Math.abs(dx)>Math.abs(dy)*1.3?"x":"y";
+    if(drag.lock=="x"){vp.setPointerCapture(e.pointerId);track.classList.remove("anim");bar.classList.remove("anim")}
+  }
+  if(drag.lock=="x"){let p=idx-dx/vp.clientWidth;p=p<0?p*.3:p>1?1+(p-1)*.3:p;setPos(p)}
+});
+function endDrag(e){
+  if(drag&&drag.lock=="x"){
+    const dx=e.clientX-drag.x,v=dx/(performance.now()-drag.t);
+    let to=idx;if(dx<-60||(v<-.5&&dx<-20))to=1;else if(dx>60||(v>.5&&dx>20))to=0;
+    goTo(to);
+  }
+  drag=null;
+}
+vp.addEventListener("pointerup",endDrag);
+vp.addEventListener("pointercancel",()=>{if(drag&&drag.lock=="x")goTo(idx);drag=null});
+panels.forEach(p=>new ResizeObserver(()=>{if(p===panels[idx])fit()}).observe(p));
+addEventListener("resize",fit);
+goTo(0,false);requestAnimationFrame(()=>{track.classList.add("anim");bar.classList.add("anim")});
+})();
+</script>
+</body>
+</html>
